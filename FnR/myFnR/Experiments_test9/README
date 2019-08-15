@@ -1,0 +1,42 @@
+Results of Test9
+
+Graphs starts with c means clflush, n means normal execution.
+
+c17 means, clflush with 17 loop.
+
+
+code:
+
+// for aligning at the beginning of the page
+uint32_t * samples = (uint32_t *) memalign(4096, sample_count * sizeof(uint32_t));
+// fill with 0's
+memset(samples, 0, sample_count * sizeof(uint32_t));
+
+for i 1-4096 do:
+	if clflush then:
+		clflush(samples)
+	end if
+
+	// Important loop
+	for j 1-18 do: // 17-18-19-20 is the variable that changes during experiments
+		samples[0] = j
+	end for loop
+
+	start timer
+
+	// Above, we have read samples to the cache
+	// play with those variables	
+	for j 0-16 do:
+		samples[j] = other // either 0 or 1, for store operation
+	end for loop
+
+	end timer
+
+	calculate timer difference, assign to the array
+
+end for loop
+
+
+If the j count in the important loop is below 19, then the average of 4096 runs of the
+clflush execution is much higher than the normal execution.
+
