@@ -1,4 +1,0 @@
-
-
-x = 1:4096
-scatter(x,ARRAY_NAME),xlabel('runs'), ylabel('cycle'), title('Normal execution, 19 loops')
