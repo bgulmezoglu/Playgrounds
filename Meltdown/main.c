@@ -102,29 +102,22 @@ uint64_t* prepare_probe(){
 void print_usage_message(){
     printf("Usage:\t ./meltdown NUMBER\n");
     printf("Number 0: Testing flush and reload functionality\n");
-    printf("Number 1: Testing meltdown with only first location\n");
+    printf("Number 1: Testing kernel access\n");
     printf("Number 2: Testing meltdown without kernel, reading a static string\n");
+    printf("Number 3: Testing meltdown with kernel. Trying to read whole kernel. \n");
+    printf("TODO: Test 1 and 3 don't work\n");
 
 }
 
 
 int main(int argc, char * argv[])
 {
-    
-    //char* kernel_pointer = (char *)PHYS_OFFSET;
-    
-    //uint8_t * kernel_pointer = (uint8_t *)(PHYS_OFFSET);   
-    
-    
-
     // actual array
     uint64_t *arr = prepare_probe();
     // pointer for accessing
     uint64_t* probe_array = arr;
 
     flushprobe(probe_array);
-    
-    
     
     int argument = atoi(argv[1]);
     if(argc != 2){
