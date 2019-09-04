@@ -1,0 +1,28 @@
+all: main.c
+	gcc -g main.c -o asm
+	objdump -D asm > asm.dis
+
+pointer: pointer.c
+	gcc -g pointer.c -o pt
+	objdump -D pt > pt.dis
+
+shiftleft: shiftleft.c
+	gcc -g shiftleft.c -o shl
+	objdump -D shl > shl.dis
+
+meltdown: meltdown.c
+	gcc -g meltdown.c -o md
+	objdump -D md > md.dis
+add: add.c
+	gcc -g add.c -o add
+	objdump -D add > add.dis
+
+clear:
+	rm -f asm
+	
+	rm -f pt
+	rm -f pt.dis
+	rm -f shl
+	rm -f md
+	rm -f asm.disK
+	

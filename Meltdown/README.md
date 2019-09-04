@@ -16,3 +16,14 @@
 
 8- To disable ASLR
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space
+
+
+9- For better performance, run it on a seperate core
+
+
+sudo taskset -c <cpu_number> <application>
+
+Example usage:
+
+sudo taskset -c 7 ./meltdown 0
+
