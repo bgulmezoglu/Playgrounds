@@ -31,7 +31,7 @@
 uint8_t temp = 0;
 int bufferSize = 16;
 // TODO
-// If we declare buffer size as 16 instead of 16, it works, but with lower resolution
+// If we declare buffer size as 16 instead of 160, it works, but with lower resolution
 // WHY?
 uint8_t buffer[160] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 };
 // TODO
