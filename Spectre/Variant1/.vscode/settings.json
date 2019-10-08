@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "spectre_helper.h": "c",
+        "fnr_helper.h": "c",
+        "stdio.h": "c"
+    }
+}
