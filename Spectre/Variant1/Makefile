@@ -1,4 +1,4 @@
-all: spectre1 spectre2 spectre3 spectre4 spectre5 spectre6 spectre7 spectre8
+all: 	spectre1 spectre2 spectre3 spectre4 spectre5 spectre6 spectre7 spectre8 spectre9 spectre10 spectre11 spectre12 spectre13 spectre14 spectre15
 
 spectre1: spectre.c spectre_helper.c v1.c
 	gcc -D __SPECTRE__V1 spectre.c spectre_helper.c v1.c -O0 -o spectre1 
@@ -32,7 +32,33 @@ spectre8: spectre.c spectre_helper.c v8.c
 	gcc -D __SPECTRE__V8 spectre.c spectre_helper.c v8.c -O0 -o spectre8
 	objdump -D spectre8 > spectre8.dis
 
+spectre9: spectre.c spectre_helper.c v9.c
+	gcc -D __SPECTRE__V9 spectre.c spectre_helper.c v9.c -O0 -o spectre9
+	objdump -D spectre9 > spectre9.dis
 
+spectre10: spectre.c spectre_helper.c v10.c
+	gcc -D __SPECTRE__V10 spectre.c spectre_helper.c v10.c -O0 -o spectre10
+	objdump -D spectre10 > spectre10.dis
+
+spectre11: spectre.c spectre_helper.c v11.c
+	gcc -D __SPECTRE__V11 spectre.c spectre_helper.c v11.c -O0 -o spectre11
+	objdump -D spectre11 > spectre11.dis
+
+spectre12: spectre.c spectre_helper.c v12.c
+	gcc -D __SPECTRE__V12 spectre.c spectre_helper.c v12.c -O0 -o spectre12
+	objdump -D spectre12 > spectre12.dis
+
+spectre13: spectre.c spectre_helper.c v13.c
+	gcc -D __SPECTRE__V13 spectre.c spectre_helper.c v13.c -O0 -o spectre13
+	objdump -D spectre13 > spectre13.dis
+
+spectre14: spectre.c spectre_helper.c v14.c
+	gcc -D __SPECTRE__V14 spectre.c spectre_helper.c v14.c -O0 -o spectre14
+	objdump -D spectre14 > spectre14.dis
+
+spectre15: spectre.c spectre_helper.c v15.c
+	gcc -D __SPECTRE__V15 spectre.c spectre_helper.c v15.c -O0 -o spectre15
+	objdump -D spectre15 > spectre15.dis
 
 clean:
 	rm -f spectre1
@@ -51,3 +77,17 @@ clean:
 	rm -f spectre7.dis
 	rm -f spectre8
 	rm -f spectre8.dis
+	rm -f spectre9
+	rm -f spectre9.dis
+	rm -f spectre10
+	rm -f spectre10.dis
+	rm -f spectre11
+	rm -f spectre11.dis
+	rm -f spectre12
+	rm -f spectre12.dis
+	rm -f spectre13
+	rm -f spectre13.dis
+	rm -f spectre14
+	rm -f spectre14.dis
+	rm -f spectre15
+	rm -f spectre15.dis

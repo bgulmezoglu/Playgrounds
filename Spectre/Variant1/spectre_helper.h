@@ -30,6 +30,14 @@ void steal_byte(int* scores, int larger_x);
 // imported by v1. v2 ...c
 #ifdef __SPECTRE__V7
 size_t* victim_function(size_t x);
+#elif __SPECTRE__V9
+void victim_function(size_t x, int* x_is_safe);
+#elif __SPECTRE__V10
+void victim_function(size_t x, uint8_t k);
+#elif __SPECTRE__V12
+void victim_function(size_t x, size_t y);
+#elif __SPECTRE__V15
+void victim_function(size_t *x);
 #else
 void victim_function(size_t x);
 #endif

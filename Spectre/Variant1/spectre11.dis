@@ -1,5 +1,5 @@
 
-spectre8:     file format elf64-x86-64
+spectre11:     file format elf64-x86-64
 
 
 Disassembly of section .interp:
@@ -47,19 +47,17 @@ Disassembly of section .note.gnu.build-id:
  27e:	00 00                	add    %al,(%rax)
  280:	47                   	rex.RXB
  281:	4e 55                	rex.WRX push %rbp
- 283:	00 d1                	add    %dl,%cl
- 285:	5d                   	pop    %rbp
- 286:	9f                   	lahf   
- 287:	26 47 f1             	es rex.RXB icebp 
- 28a:	8a d8                	mov    %al,%bl
- 28c:	75 87                	jne    215 <_init-0x34b>
- 28e:	e0 0a                	loopne 29a <_init-0x2c6>
- 290:	96                   	xchg   %eax,%esi
- 291:	58                   	pop    %rax
- 292:	97                   	xchg   %eax,%edi
- 293:	e0 a1                	loopne 236 <_init-0x32a>
- 295:	72 7e                	jb     315 <_init-0x24b>
- 297:	43                   	rex.XB
+ 283:	00 f4                	add    %dh,%ah
+ 285:	b5 39                	mov    $0x39,%ch
+ 287:	34 1e                	xor    $0x1e,%al
+ 289:	98                   	cwtl   
+ 28a:	cb                   	lret   
+ 28b:	b0 93                	mov    $0x93,%al
+ 28d:	02 dd                	add    %ch,%bl
+ 28f:	79 a1                	jns    232 <_init-0x32e>
+ 291:	ed                   	in     (%dx),%eax
+ 292:	d5                   	(bad)  
+ 293:	be f9 7d 23 df       	mov    $0xdf237df9,%esi
 
 Disassembly of section .gnu.hash:
 
@@ -532,7 +530,7 @@ Disassembly of section .text:
  7e7:	48 89 e5             	mov    %rsp,%rbp
  7ea:	53                   	push   %rbx
  7eb:	48 89 7d e0          	mov    %rdi,-0x20(%rbp)
- 7ef:	c7 45 ec 02 00 00 00 	movl   $0x2,-0x14(%rbp)
+ 7ef:	c7 45 ec 00 00 00 00 	movl   $0x0,-0x14(%rbp)
  7f6:	eb 5a                	jmp    852 <find_cached_index+0x6c>
  7f8:	48 c7 45 f0 00 00 00 	movq   $0x0,-0x10(%rbp)
  7ff:	00 
@@ -703,26 +701,28 @@ Disassembly of section .text:
  a08:	8b 05 12 06 20 00    	mov    0x200612(%rip),%eax        # 201020 <bufferSize>
  a0e:	48 98                	cltq   
  a10:	48 39 45 f8          	cmp    %rax,-0x8(%rbp)
- a14:	73 06                	jae    a1c <victim_function+0x1c>
- a16:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
- a1a:	eb 05                	jmp    a21 <victim_function+0x21>
- a1c:	b8 00 00 00 00       	mov    $0x0,%eax
- a21:	48 8d 15 18 06 20 00 	lea    0x200618(%rip),%rdx        # 201040 <buffer>
- a28:	0f b6 04 10          	movzbl (%rax,%rdx,1),%eax
- a2c:	0f b6 c0             	movzbl %al,%eax
- a2f:	c1 e0 0c             	shl    $0xc,%eax
- a32:	48 63 d0             	movslq %eax,%rdx
- a35:	48 8d 05 04 07 20 00 	lea    0x200704(%rip),%rax        # 201140 <array>
- a3c:	0f b6 14 02          	movzbl (%rdx,%rax,1),%edx
- a40:	0f b6 05 da 06 20 00 	movzbl 0x2006da(%rip),%eax        # 201121 <temp>
- a47:	21 d0                	and    %edx,%eax
- a49:	88 05 d2 06 20 00    	mov    %al,0x2006d2(%rip)        # 201121 <temp>
- a4f:	90                   	nop
- a50:	5d                   	pop    %rbp
- a51:	c3                   	retq   
- a52:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
- a59:	00 00 00 
- a5c:	0f 1f 40 00          	nopl   0x0(%rax)
+ a14:	73 3b                	jae    a51 <victim_function+0x51>
+ a16:	48 8d 05 04 07 20 00 	lea    0x200704(%rip),%rax        # 201121 <temp>
+ a1d:	0f b6 10             	movzbl (%rax),%edx
+ a20:	48 8d 0d 19 07 20 00 	lea    0x200719(%rip),%rcx        # 201140 <array>
+ a27:	48 8b 45 f8          	mov    -0x8(%rbp),%rax
+ a2b:	48 01 c8             	add    %rcx,%rax
+ a2e:	0f b6 00             	movzbl (%rax),%eax
+ a31:	0f b6 c0             	movzbl %al,%eax
+ a34:	c1 e0 0c             	shl    $0xc,%eax
+ a37:	48 63 c8             	movslq %eax,%rcx
+ a3a:	48 8d 05 ff 05 20 00 	lea    0x2005ff(%rip),%rax        # 201040 <buffer>
+ a41:	48 01 c8             	add    %rcx,%rax
+ a44:	0f b6 00             	movzbl (%rax),%eax
+ a47:	29 c2                	sub    %eax,%edx
+ a49:	89 d0                	mov    %edx,%eax
+ a4b:	88 05 d0 06 20 00    	mov    %al,0x2006d0(%rip)        # 201121 <temp>
+ a51:	90                   	nop
+ a52:	5d                   	pop    %rbp
+ a53:	c3                   	retq   
+ a54:	66 2e 0f 1f 84 00 00 	nopw   %cs:0x0(%rax,%rax,1)
+ a5b:	00 00 00 
+ a5e:	66 90                	xchg   %ax,%ax
 
 0000000000000a60 <__libc_csu_init>:
  a60:	41 57                	push   %r15
@@ -975,11 +975,11 @@ Disassembly of section .eh_frame:
  cb0:	50                   	push   %rax
  cb1:	fd                   	std    
  cb2:	ff                   	(bad)  
- cb3:	ff 52 00             	callq  *0x0(%rdx)
- cb6:	00 00                	add    %al,(%rax)
- cb8:	00 41 0e             	add    %al,0xe(%rcx)
+ cb3:	ff 54 00 00          	callq  *0x0(%rax,%rax,1)
+ cb7:	00 00                	add    %al,(%rax)
+ cb9:	41 0e                	rex.B (bad) 
  cbb:	10 86 02 43 0d 06    	adc    %al,0x60d4302(%rsi)
- cc1:	02 4d 0c             	add    0xc(%rbp),%cl
+ cc1:	02 4f 0c             	add    0xc(%rdi),%cl
  cc4:	07                   	(bad)  
  cc5:	08 00                	or     %al,(%rax)
  cc7:	00 44 00 00          	add    %al,0x0(%rax,%rax,1)
