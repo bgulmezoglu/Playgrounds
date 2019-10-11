@@ -7,6 +7,8 @@
 // measure the time again
 // find difference between 2 timer
 // put the difference in _time variable, or rax
+// rdtscp changes rax and rdx, that is why rdx in the
+// third column of the assembly code
 #define measure_time(_time, _addr) asm volatile(\
 				"mfence\n"\
 				"rdtscp\n"\
@@ -16,7 +18,7 @@
 				"sub %%r10, %%rax\n"\
 				: "=a"(_time)\
 				: "b"(_addr)\
-				: "rcx", "r10");
+				: "rcx", "r10", "rdx");
 
 // flushs the probe array
 #define clflush_array(_array)\
