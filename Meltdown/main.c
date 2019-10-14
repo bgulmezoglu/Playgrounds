@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <setjmp.h>
-#include <signal.h>
 #include "functions.h"
 
 // kernel start location
