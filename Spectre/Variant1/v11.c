@@ -4,6 +4,7 @@
 #include <string.h>
 
 // SPECTRE 11
+// Don't have a good accuracy
 void victim_function(size_t x) {
     if (x < bufferSize)
         temp = memcmp(&temp, array + (buffer[x] * 4096), 1);

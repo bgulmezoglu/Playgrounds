@@ -3,8 +3,9 @@
 #include <stdio.h>
 
 // SPECTRE V4
-
+// TODO
+// Problem
 void victim_function(size_t x) {
-     if (x < bufferSize)
-          temp &= array[buffer[x << 1] * 4096];
+    if (x < bufferSize)
+        temp &= array[buffer[x << 1] * 4096];
 }

@@ -22,7 +22,7 @@ extern uint8_t buffer[160];
 extern char secret[];
 
 // imported by spectre_helper.c
-void find_cached_index(int* scores);
+int find_cached_index(int* scores);
 void find_highest_score(int* scores);
 void train_victim();
 void steal_byte(int* scores, int larger_x);
