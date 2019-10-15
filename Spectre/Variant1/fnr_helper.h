@@ -22,9 +22,9 @@
 
 // flushs the probe array
 #define clflush_array(_array)\
-	for (int j = 0; j < 256; j++)\
+	for (int jklmn = 0; jklmn < 256; jklmn++)\
 	{\
-		clflush(&_array[j * 4096]);\
+		clflush(&_array[jklmn * 4096]);\
 	}\
 	asm volatile("mfence");
 
